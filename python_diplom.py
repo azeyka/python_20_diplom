@@ -60,7 +60,6 @@ class User():
 
     return groups_list
 
-
   def Compare_groups(self):
 
 
