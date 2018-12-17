@@ -159,5 +159,5 @@ def get_unique_groups(inputed_id):
     print(assertErr)
 
 
-# if __name__ == 'main':
-get_unique_groups('7459752')
+if __name__ == '__main__':
+  get_unique_groups('7459752')
