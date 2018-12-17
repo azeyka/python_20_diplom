@@ -6,11 +6,12 @@ import json
 
 class User():
 
-  def __init__(self, token, id):
+  def __init__(self, token, id, name):
     self.token = token
     self.id = id
+    self.name = name
 
-  def Get_friends_ids(self):
+  def Get_friends_list(self):
     params = {
       'user_id': self.id,
       'order': 'name',
@@ -21,12 +22,12 @@ class User():
     response = requests.get('https://api.vk.com/method/friends.get',
                             params)
 
-    ids_list = []
+    friends_list = []
     for friend in response.json()['response']['items']:
       if not 'deactivated' in friend:
-        ids_list.append(friend['id'])
+        friends_list.append(friend)
 
-    return ids_list
+    return friends_list
 
   def Get_groups_list(self):
     params = {
@@ -39,7 +40,7 @@ class User():
                               params)
       if 'error' in response.json():
         assert response.json()['error']['error_code'] != 30, \
-          '\r\t- Пользователь {} запретил доступ к группам!'.format(self.id)
+          '\r\t- Друг пользователя {} запретил доступ к группам!'.format(self.name)
 
       groups_list = response.json()['response']['groups']['items']
       if len(groups_list) > 1000:
@@ -66,30 +67,32 @@ class User():
     def update_progress(i, friends_count, time_left, progress):
       barLength = 20
       block = int(round(barLength * progress))
-      text = '\r[{}] {}% Получены данные {} из {} (осталось ~{} мин {} сек)'\
+      text = '\r[{}] ({}%) Выполняется запрос {} из {} (осталось ~{} мин {} сек)'\
               .format("=" * block + " " * (barLength - block), int(progress * 100),\
               i, friends_count, int(time_left//60), int(time_left % 60))
       sys.stdout.write(text)
       sys.stdout.flush()
 
-    friends_ids = self.Get_friends_ids()
+    print('> Получаем список друзей пользователя...')
+    friends_list = self.Get_friends_list()
     print('> Получаем список групп пользователя...')
     user_groups = self.Get_groups_list()
     i = 0
-    one_persent = len(friends_ids) / 100
+    one_persent = len(friends_list) / 100
 
     print('> Получаем список групп друзей пользователя...')
-    for friend_id in friends_ids:
+    for friend in friends_list:
       start_time = time.time()
-      friend = User(self.token, friend_id)
+      friend_name = friend['first_name'] + ' ' + friend['last_name']
+      friend = User(self.token, friend['id'], friend_name)
       friend_groups = friend.Get_groups_list()
       user_groups = list(set(user_groups).difference(set(friend_groups)))
       end_time = time.time()
 
       i += 1
-      time_left = (len(friends_ids) - i) * (end_time - start_time)
+      time_left = (len(friends_list) - i) * (end_time - start_time)
       progress = i/one_persent/100
-      update_progress(i, len(friends_ids), time_left, progress)
+      update_progress(i, len(friends_list), time_left, progress)
 
     return user_groups
 
@@ -106,7 +109,8 @@ def get_unique_groups(inputed_id):
     response = requests.get('https://api.vk.com/method/users.get',
                             params)
     try:
-      return response.json()['response'][0]['id']
+
+      return response.json()['response'][0]
     except:
       return 'not found'
 
@@ -130,10 +134,12 @@ def get_unique_groups(inputed_id):
     print('Результат записан в файл по адресу {}'.format(file_path))
 
   token = 'ed1271af9e8883f7a7c2cefbfddfcbc61563029666c487b2f71a5227cce0d1b533c4af4c5b888633c06ae'
-  user_id = find_user_in_vk(inputed_id)
+  response = find_user_in_vk(inputed_id)
   try:
-    assert user_id != 'not found', ('> Данного пользователя не существует!')
-    user = User(token, user_id)
+    assert response != 'not found', ('> Данного пользователя не существует!')
+    user_name = response['first_name'] + ' ' + response['last_name']
+    print('> Найден пользователь по имени {}!'.format(user_name))
+    user = User(token, response['id'], user_name)
     unique_groups_list = user.Compare_groups()
     print('\n> Обрабатываем результат...')
     if unique_groups_list:
@@ -152,4 +158,6 @@ def get_unique_groups(inputed_id):
   except AssertionError as assertErr:
     print(assertErr)
 
-get_unique_groups('aneleaveza')
+
+# if __name__ == 'main':
+get_unique_groups('7459752')
