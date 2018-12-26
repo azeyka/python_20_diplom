@@ -138,9 +138,7 @@ def get_unique_groups():
 
 def find_config():
   files_list = os.listdir(current_dir)
-  if '.gitignore' in files_list:
-    return '.gitignore'
-  elif 'config.json' in files_list:
+  if 'config.json' in files_list:
     return 'config.json'
   else:
     return 'no config file'
