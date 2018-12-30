@@ -4,6 +4,12 @@ import sys
 import os
 import json
 
+TOO_MANY_REQUESTS = 6
+FLOOD_CONTROL = 10
+USER_NOT_FOUND = 113
+BAD_TOKEN = 5
+PROFILE_IS_PRIVATE = 30
+
 class User():
 
   def __init__(self, token, id, name):
@@ -152,11 +158,10 @@ def find_user_in_vk(user_id, token):
 
 def print_unique_groups(groups):
   print('\nСписок групп, в которых состоит пользователь и не состоят его друзья:')
-  i = 1
-  for group in groups:
+
+  for i, group in enumerate(groups, 1):
     link = 'https://vk.com/' + group['screen_name']
     print('{}) {} ({})'.format(i, group['name'], link))
-    i += 1
 
 def write_result_to_JSON_file(groups):
   print('\n> Записываем результат в файл...')
@@ -169,14 +174,9 @@ def write_result_to_JSON_file(groups):
       'gid': group['id'],
       'members_count': group['members_count']
     })
-  json.dump(result, open(file_path, 'w', encoding='UTF-8'), indent=4, ensure_ascii=False)
-  print('Результат записан в файл по адресу {}'.format(file_path))
-
-TOO_MANY_REQUESTS = 6
-FLOOD_CONTROL = 10
-USER_NOT_FOUND = 113
-BAD_TOKEN = 5
-PROFILE_IS_PRIVATE = 30
+  with open(file_path, 'w', encoding='UTF-8') as result_file:
+    json.dump(result, result_file, indent=4, ensure_ascii=False)
+    print('Результат записан в файл по адресу {}'.format(file_path))
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
